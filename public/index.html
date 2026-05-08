@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎮 Multiplayer Tag Game</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      color: #333;
+    }
+
+    .container {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      padding: 30px;
+      max-width: 900px;
+      width: 90%;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .header h1 {
+      font-size: 2.5em;
+      color: #667eea;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      color: #666;
+      font-size: 1.1em;
+    }
+
+    #lobby {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    #lobby.hidden {
+      display: none;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    #nameInput {
+      padding: 12px 15px;
+      border: 2px solid #667eea;
+      border-radius: 8px;
+      font-size: 1em;
+      min-width: 250px;
+      transition: border-color 0.3s;
+    }
+
+    #nameInput:focus {
+      outline: none;
+      border-color: #764ba2;
+    }
+
+    #joinBtn {
+      padding: 12px 30px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1em;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    #joinBtn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    #joinBtn:active {
+      transform: translateY(0);
+    }
+
+    #gameArea {
+      display: none;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    #gameArea.active {
+      display: flex;
+    }
+
+    #gameCanvas {
+      border: 3px solid #333;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      border-radius: 10px;
+      display: block;
+      margin: 0 auto;
+      cursor: move;
+    }
+
+    .game-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    .info-box {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+
+    .info-box h3 {
+      color: #667eea;
+      margin-bottom: 8px;
+      font-size: 0.9em;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .info-box p {
+      font-size: 1.2em;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .status-it {
+      color: #e74c3c;
+    }
+
+    .status-safe {
+      color: #2ecc71;
+    }
+
+    #playersList {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 4px solid #764ba2;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    #playersList h3 {
+      color: #764ba2;
+      margin-bottom: 10px;
+      font-size: 0.9em;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .player-item {
+      padding: 8px;
+      margin: 5px 0;
+      background: white;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-left: 3px solid #999;
+    }
+
+    .player-item.it {
+      background: #ffe0e0;
+      border-left-color: #e74c3c;
+    }
+
+    .player-item.it .player-name {
+      color: #e74c3c;
+      font-weight: bold;
+    }
+
+    .player-item.safe .player-name {
+      color: #2ecc71;
+    }
+
+    .player-name {
+      font-weight: 500;
+    }
+
+    .player-tags {
+      background: #667eea;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.85em;
+      font-weight: bold;
+    }
+
+    .controls {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .controls p {
+      margin-bottom: 10px;
+      color: #666;
+      font-size: 0.9em;
+    }
+
+    .controls strong {
+      color: #667eea;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 20px;
+      }
+
+      .header h1 {
+        font-size: 1.8em;
+      }
+
+      #gameCanvas {
+        max-width: 100%;
+        height: auto;
+      }
+
+      .game-info {
+        grid-template-columns: 1fr;
+      }
+
+      .input-group {
+        flex-direction: column;
+      }
+
+      #nameInput {
+        min-width: 100%;
+      }
+    }
+
+    /* Scrollbar styling */
+    #playersList::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #playersList::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+
+    #playersList::-webkit-scrollbar-thumb {
+      background: #667eea;
+      border-radius: 10px;
+    }
+
+    #playersList::-webkit-scrollbar-thumb:hover {
+      background: #764ba2;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎮 Tag Game</h1>
+      <p>Real-time Multiplayer Tag - Chase or Be Chased!</p>
+    </div>
+
+    <div id="lobby">
+      <div class="input-group">
+        <input id="nameInput" type="text" placeholder="Enter your name..." maxlength="20">
+        <button id="joinBtn">Join Game</button>
+      </div>
+    </div>
+
+    <div id="gameArea">
+      <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+      <div class="game-info">
+        <div class="info-box">
+          <h3>Your Status</h3>
+          <p id="statusText">Waiting...</p>
+        </div>
+        <div class="info-box">
+          <h3>Players Online</h3>
+          <p id="playerCount">0</p>
+        </div>
+      </div>
+
+      <div id="playersList">
+        <h3>Leaderboard</h3>
+        <div id="leaderboard"></div>
+      </div>
+
+      <div class="controls">
+        <p><strong>Controls:</strong> Arrow Keys or WASD to move</p>
+        <p><strong>Goal:</strong> If you're IT (red), catch someone! If you're safe (blue), avoid being caught!</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let playerId = null;
+    let players = {};
+    let itPlayerId = null;
+    let canvasWidth = 800;
+    let canvasHeight = 600;
+    let gameStarted = false;
+    let keys = {};
+
+    // UI Elements
+    const lobby = document.getElementById('lobby');
+    const gameArea = document.getElementById('gameArea');
+    const nameInput = document.getElementById('nameInput');
+    const joinBtn = document.getElementById('joinBtn');
+    const statusText = document.getElementById('statusText');
+    const playerCount = document.getElementById('playerCount');
+    const leaderboard = document.getElementById('leaderboard');
+
+    // Event listeners
+    joinBtn.addEventListener('click', joinGame);
+    nameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') joinGame();
+    });
+
+    window.addEventListener('keydown', (e) => {
+      keys[e.key.toLowerCase()] = true;
+      if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'].includes(e.key.toLowerCase())) {
+        e.preventDefault();
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      keys[e.key.toLowerCase()] = false;
+    });
+
+    // Socket events
+    socket.on('gameState', (data) => {
+      players = data.players;
+      itPlayerId = data.itPlayerId;
+      canvasWidth = data.canvasWidth;
+      canvasHeight = data.canvasHeight;
+
+      if (!playerId && socket.id) {
+        playerId = socket.id;
+      }
+
+      updateUI();
+      render();
+    });
+
+    function joinGame() {
+      const name = nameInput.value.trim() || 'Anonymous';
+      socket.emit('setName', name);
+      lobby.classList.add('hidden');
+      gameArea.classList.add('active');
+      gameStarted = true;
+      gameLoop();
+    }
+
+    function updateUI() {
+      playerCount.textContent = Object.keys(players).length;
+
+      if (playerId && players[playerId]) {
+        const isIT = playerId === itPlayerId;
+        statusText.innerHTML = isIT 
+          ? '<span class="status-it">🔴 YOU ARE IT!</span>'
+          : '<span class="status-safe">🟢 YOU ARE SAFE</span>';
+      }
+
+      // Update leaderboard
+      const sortedPlayers = Object.values(players).sort((a, b) => b.tags - a.tags);
+      leaderboard.innerHTML = sortedPlayers.map(p => `
+        <div class="player-item ${p.id === itPlayerId ? 'it' : 'safe'}">
+          <span class="player-name">${p.id === itPlayerId ? '🔴' : '🟢'} ${p.name}${p.id === playerId ? ' (You)' : ''}</span>
+          <span class="player-tags">Tags: ${p.tags}</span>
+        </div>
+      `).join('');
+    }
+
+    function render() {
+      // Clear canvas
+      ctx.fillStyle = '#f5f7fa';
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+      // Draw background gradient
+      const gradient = ctx.createLinearGradient(0, 0, canvasWidth, canvasHeight);
+      gradient.addColorStop(0, '#f5f7fa');
+      gradient.addColorStop(1, '#c3cfe2');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+      // Draw players
+      for (let id in players) {
+        const p = players[id];
+        const isIT = id === itPlayerId;
+        const isMe = id === playerId;
+
+        // Player circle
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 20, 0, 2 * Math.PI);
+        ctx.fillStyle = isIT ? '#e74c3c' : '#3498db';
+        ctx.fill();
+
+        // Border
+        ctx.strokeStyle = isMe ? '#f39c12' : '#222';
+        ctx.lineWidth = isMe ? 3 : 2;
+        ctx.stroke();
+
+        // Name
+        ctx.font = 'bold 14px Arial';
+        ctx.fillStyle = '#222';
+        ctx.textAlign = 'center';
+        ctx.fillText(p.name, p.x, p.y - 30);
+
+        // IT indicator
+        if (isIT) {
+          ctx.font = 'bold 20px Arial';
+          ctx.fillText('IT', p.x, p.y + 5);
+        }
+      }
+    }
+
+    function gameLoop() {
+      if (!gameStarted || !players[playerId]) {
+        return requestAnimationFrame(gameLoop);
+      }
+
+      let moved = false;
+      const player = players[playerId];
+      let x = player.x;
+      let y = player.y;
+      const speed = 5;
+
+      if (keys['arrowup'] || keys['w']) {
+        y -= speed;
+        moved = true;
+      }
+      if (keys['arrowdown'] || keys['s']) {
+        y += speed;
+        moved = true;
+      }
+      if (keys['arrowleft'] || keys['a']) {
+        x -= speed;
+        moved = true;
+      }
+      if (keys['arrowright'] || keys['d']) {
+        x += speed;
+        moved = true;
+      }
+
+      if (moved) {
+        socket.emit('move', {
+          x: Math.max(20, Math.min(canvasWidth - 20, x)),
+          y: Math.max(20, Math.min(canvasHeight - 20, y))
+        });
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+  </script>
+</body>
+</html>
