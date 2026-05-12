@@ -44,25 +44,27 @@ function broadcastGameState() {
 function checkTagging(movingPlayerId) {
   if (itPlayerId !== movingPlayerId || !players[itPlayerId]) return;
 
-  const itPlayer = players[itPlayerId];
+  const currentItId = itPlayerId;
+  const itPlayer = players[currentItId];
   const tagDistance = TAG_DISTANCE + PLAYER_RADIUS;
 
-  Object.keys(players).forEach(playerId => {
-    if (playerId !== itPlayerId) {
-      const player = players[playerId];
-      const dx = player.x - itPlayer.x;
-      const dy = player.y - itPlayer.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
+  for (const playerId of Object.keys(players)) {
+    if (playerId === currentItId) continue;
 
-      if (distance < tagDistance) {
-        // Tag successful!
-        itPlayer.tags = (itPlayer.tags || 0) + 1;
-        itPlayerId = playerId;
-        console.log(`🏷️  ${players[itPlayerId].name} was tagged by ${itPlayer.name}`);
-        broadcastGameState();
-      }
+    const player = players[playerId];
+    const dx = player.x - itPlayer.x;
+    const dy = player.y - itPlayer.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance < tagDistance) {
+      // Tag successful. Only transfer once per move and stop checking further collisions.
+      itPlayer.tags = (itPlayer.tags || 0) + 1;
+      itPlayerId = playerId;
+      console.log(`🏷️  ${players[itPlayerId].name} was tagged by ${itPlayer.name}`);
+      broadcastGameState();
+      break;
     }
-  });
+  }
 }
 
 // Socket.io connection handling
